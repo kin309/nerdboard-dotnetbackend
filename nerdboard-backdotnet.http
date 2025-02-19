@@ -1,0 +1,6 @@
+@nerdboard_backdotnet_HostAddress = http://localhost:5100
+
+GET {{nerdboard_backdotnet_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

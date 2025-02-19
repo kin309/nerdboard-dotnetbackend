@@ -1,0 +1,1 @@
+Digite esse comando no prompt: set GOOGLE_APPLICATION_CREDENTIALS=firebase-adminsdk.json

@@ -1,0 +1,31 @@
+# Ignore Visual Studio Code specific files
+.vscode/
+
+# Ignore ASP.NET build files and temporary files
+bin/
+obj/
+
+# User-specific files (e.g., OS-generated files)
+Thumbs.db
+ehthumbs.db
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# JetBrains Rider files
+.idea/
+
+# ASP.NET Core environment variable file
+.env
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# .NET Core
+.project.json
+project.lock.json
+
+firebase-adminsdk.json
