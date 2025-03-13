@@ -9,7 +9,7 @@ public class RoomService
 
     public async Task CreateRoomAsync(string roomName, string roomId, string userId, string userName)
     {
-        var room = new Room
+        var room = new FirestoreRoom
         {
             RoomId = roomId,
             RoomName = roomName,
@@ -20,7 +20,7 @@ public class RoomService
 
     public async Task AddUserToRoomAsync(string roomId, string userId, string userName)
     {
-        var user = new User { Id = userId, Username = userName };
+        var user = new FirestoreUser { Id = userId, Username = userName };
         await _roomRepository.AddUserToRoomAsync(roomId, user);
     }
 
@@ -31,18 +31,25 @@ public class RoomService
 
     public async Task SendMessageToRoomAsync(string roomId, string userName, string text)
     {
-        var message = new Message { SenderId = userName, Content = text };
+        var message = new FirestoreMessage { SenderId = userName, Content = text };
         await _roomRepository.AddMessageToRoomAsync(roomId, message);
     }
 
-    public async Task<List<string>> GetUsersInRoomAsync(string roomId)
+    public async Task<List<string?>> GetUsersInRoomAsync(string roomId)
     {
         var room = await _roomRepository.GetRoomAsync(roomId);
-        return room?.Users.Values.Select(u => u.Username).ToList() ?? new List<string>();
+        return room?.Users.Values.Select(u => u.Username).ToList() ?? new List<string?>();
     }
 
-    public async Task<List<string>> GetRoomsAsync()
+    public async Task<List<Room>> GetRoomsAsync()
     {
-        return await _roomRepository.GetRoomsAsync();
+        List<FirestoreRoom> firestoreRooms = await _roomRepository.GetRoomsAsync();
+
+        List<Room> rooms = new List<Room>();
+        foreach (var firestoreRoom in firestoreRooms){
+            Console.WriteLine(firestoreRoom.RoomName);
+        }
+
+        return rooms;
     }
 }

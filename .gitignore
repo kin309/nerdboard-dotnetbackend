@@ -4,6 +4,7 @@
 # Ignore ASP.NET build files and temporary files
 bin/
 obj/
+node_modules/
 
 # User-specific files (e.g., OS-generated files)
 Thumbs.db

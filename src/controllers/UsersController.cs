@@ -12,9 +12,13 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("add")]
-    public async Task<IActionResult> AddUser([FromBody] User user)
+    public async Task<IActionResult> AddUser([FromBody] FirestoreUser user)
     {
-        await _userService.AddUserAsync(user.Id, user.Username, user.Email);
+        var userId = user.Id ?? throw new ArgumentNullException(nameof(user), "User cannot be null");
+        var username = user.Username;
+        var email = user.Email;
+
+        await _userService.AddUserAsync(userId, username, email);
         return Ok();
     }
 

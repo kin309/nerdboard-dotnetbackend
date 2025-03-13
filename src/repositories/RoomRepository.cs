@@ -3,46 +3,55 @@ using Google.Cloud.Firestore;
 public class RoomRepository : IRoomRepository
 {
     private readonly FirestoreDb _firestoreDb;
+    private readonly CollectionReference _roomsRef;
 
     public RoomRepository(FirestoreDb firestoreDb)
     {
         _firestoreDb = firestoreDb;
+        _roomsRef = _firestoreDb.Collection("Rooms");
     }
 
-    public async Task<Room> GetRoomAsync(string roomId)
+    public async Task<FirestoreRoom?> GetRoomAsync(string roomId)
     {
-        var roomRef = _firestoreDb.Collection("Rooms").Document(roomId);
-        var snapshot = await roomRef.GetSnapshotAsync();
-        return snapshot.Exists ? snapshot.ConvertTo<Room>() : null;
+        var snapshot = await _roomsRef.Document(roomId).GetSnapshotAsync();
+        return snapshot.Exists ? snapshot.ConvertTo<FirestoreRoom>() : null;
     }
 
-    public async Task CreateRoomAsync(Room room)
+    public async Task CreateRoomAsync(FirestoreRoom room)
     {
-        var roomRef = _firestoreDb.Collection("Rooms").Document(room.RoomId);
-        await roomRef.SetAsync(room);
+        await _roomsRef.Document(room.RoomId).SetAsync(room);
     }
 
-    public async Task AddUserToRoomAsync(string roomId, User user)
+    public async Task AddUserToRoomAsync(string roomId, FirestoreUser user)
     {
-        var roomRef = _firestoreDb.Collection("Rooms").Document(roomId);
-        await roomRef.UpdateAsync($"Users.{user.Id}", user);
+        await _roomsRef.Document(roomId).UpdateAsync($"Users.{user.Id}", user);
     }
 
     public async Task RemoveUserFromRoomAsync(string roomId, string userId)
     {
-        var roomRef = _firestoreDb.Collection("Rooms").Document(roomId);
-        await roomRef.UpdateAsync($"Users.{userId}", FieldValue.Delete);
+        await _roomsRef.Document(roomId).UpdateAsync($"Users.{userId}", FieldValue.Delete);
     }
 
-    public async Task AddMessageToRoomAsync(string roomId, Message message)
+    public async Task AddMessageToRoomAsync(string roomId, FirestoreMessage message)
     {
-        var roomRef = _firestoreDb.Collection("Rooms").Document(roomId);
-        await roomRef.UpdateAsync("Messages", FieldValue.ArrayUnion(message));
+        await _roomsRef.Document(roomId).UpdateAsync("Messages", FieldValue.ArrayUnion(message));
     }
 
-    public async Task<List<string>> GetRoomsAsync()
+    public async Task<List<FirestoreRoom>> GetRoomsAsync()
     {
         var snapshot = await _firestoreDb.Collection("Rooms").GetSnapshotAsync();
-        return snapshot.Documents.Select(doc => doc.Id).ToList();
+
+        List<FirestoreRoom> rooms = new List<FirestoreRoom>();
+
+        foreach (var doc in snapshot.Documents)
+        {
+            if (doc.Exists)
+            {
+                FirestoreRoom room = doc.ConvertTo<FirestoreRoom>();
+                rooms.Add(room);
+            }
+        }
+
+        return rooms;
     }
 }

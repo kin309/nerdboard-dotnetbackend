@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using NanoidDotNet;
 
 public class RoomHub : Hub
 {
@@ -9,18 +10,33 @@ public class RoomHub : Hub
         _roomService = roomService;
     }
 
-    public async Task CreateRoom(string roomName, string roomId, string userId, string userName)
+    public override async Task OnConnectedAsync()
     {
-        Console.WriteLine("Room Created!");
-        await _roomService.CreateRoomAsync(roomName, roomId, userId, userName);
-        await Clients.Caller.SendAsync("RoomCreated", roomName);
+        Console.WriteLine($"Usuário conectado: {Context.ConnectionId}");
+        await base.OnConnectedAsync();
     }
 
-    public async Task AddUserToRoom(string roomId, string userId, string userName)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await _roomService.AddUserToRoomAsync(roomId, userId, userName);
+        Console.WriteLine($"Usuário desconectado: {Context.ConnectionId}");
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task CreateRoom(string roomName, User user)
+    {
+        Console.WriteLine("Room Created!");
+        string roomId = Nanoid.Generate(size:8);
+        Console.WriteLine($"Room ID: {roomId}");
+        await _roomService.CreateRoomAsync(roomName, roomId, user.Id, user.Username);
+        await Clients.Caller.SendAsync("RoomCreated", roomName);
+        await AddUserToRoom(roomId, user);
+    }
+
+    public async Task AddUserToRoom(string roomId, User user)
+    {
+        await _roomService.AddUserToRoomAsync(roomId, user.Id, user.Username);
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Group(roomId).SendAsync("UserAdded", userName);
+        await Clients.Group(roomId).SendAsync("UserAdded", user.Username);
     }
 
     public async Task RemoveUserFromRoom(string roomId, string userId)
@@ -36,12 +52,12 @@ public class RoomHub : Hub
         await Clients.Group(roomId).SendAsync("ReceiveMessage", userName, text);
     }
 
-    public async Task<List<string>> GetUsersInRoom(string roomId)
+    public async Task<List<string?>> GetUsersInRoom(string roomId)
     {
         return await _roomService.GetUsersInRoomAsync(roomId);
     }
 
-    public async Task<List<string>> GetRooms()
+    public async Task<List<Room>> GetRooms()
     {
         return await _roomService.GetRoomsAsync();
     }

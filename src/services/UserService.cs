@@ -2,36 +2,26 @@ using Google.Cloud.Firestore;
 
 public class UserService
 {
-    private readonly FirestoreDb _firestoreDb;
-    private readonly CollectionReference _usersRef;
+    private readonly IUserRepository _userRepository;
 
-    public UserService(FirestoreDb firestoreDb)
+    public UserService(IUserRepository userRepository)
     {
-        _firestoreDb = firestoreDb;
-        _usersRef = _firestoreDb.Collection("UsersOnline");
+        _userRepository = userRepository;
     }
 
-    public async Task AddUserAsync(string userId, string name, string email)
+    public async Task AddUserAsync(string userId, string? name, string? email)
     {
-        var user = new User{ Id = userId, Username = name, Email = email };
-        await _usersRef.Document(userId).SetAsync(user);
+        var user = new FirestoreUser{ Id = userId, Username = name, Email = email };
+        await _userRepository.AddUserAsync(user);
     }
 
     public async Task RemoveUserAsync(string userId)
     {
-        await _usersRef.Document(userId).DeleteAsync();
+        await _userRepository.RemoveUserAsync(userId);
     }
 
-    public async Task<List<User>> GetOnlineUsersAsync()
+    public async Task<List<FirestoreUser>> GetOnlineUsersAsync()
     {
-        var snapshot = await _usersRef.GetSnapshotAsync();
-        return snapshot.Documents
-            .Select(doc => new User
-            {
-                Id = doc.Id,
-                Username = doc.GetValue<string>("Username"),
-                Email = doc.GetValue<string>("Email")
-            })
-            .ToList();
+        return await _userRepository.GetOnlineUsersAsync();
     }
 }

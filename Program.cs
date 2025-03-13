@@ -16,7 +16,7 @@ builder.Services.AddCors(options =>
             .WithOrigins("http://localhost:3001") // Allow frontend
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()); // Needed for SignalR
+            .AllowCredentials());
 });
 
 // Adiciona a autenticação JWT
@@ -36,16 +36,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 FirebaseApp.Create(new AppOptions
 {
-    Credential = GoogleCredential.FromFile("firebase-adminsdk.json"),
-    
+    Credential = GoogleCredential.FromFile("firebase-adminsdk.json")
 });
 
 // Adiciona o Firestore
 builder.Services.AddSingleton(FirestoreDb.Create("nerdboard-956ae"));
 
 builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
+builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<RoomService>();
-
 builder.Services.AddSingleton<UserService>();
 
 var app = builder.Build();

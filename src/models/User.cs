@@ -1,16 +1,11 @@
-using Google.Cloud.Firestore;
+public class User{
+    public string? Id { get; set; }
+    public string? Username { get; set; }
 
-[FirestoreData]
-public class User
-{
-    [FirestoreProperty]
-    public string Id { get; set; }
-
-    [FirestoreProperty]
-    public string Username { get; set; }
-
-    [FirestoreProperty]
-    public string Email { get; set; }
-
-    public User() { } // Construtor vazio necessário para Firestore
+    public static User GetFirestoreUser(FirestoreUser firestoreUser){
+        User user = new User();
+        user.Id = firestoreUser.Id;
+        user.Username = firestoreUser.Username;
+        return user;
+    }
 }
