@@ -6,4 +6,5 @@ public interface IRoomRepository
     Task RemoveUserFromRoomAsync(string roomId, string userId);
     Task AddMessageToRoomAsync(string roomId, FirestoreMessage message);
     Task<List<FirestoreRoom>> GetRoomsAsync();
+    Task<bool> GetUserInRoomAsync(string roomId, string userId);  // Método adicional
 }

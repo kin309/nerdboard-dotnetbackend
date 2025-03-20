@@ -54,4 +54,21 @@ public class RoomRepository : IRoomRepository
 
         return rooms;
     }
+
+    public async Task<bool> GetUserInRoomAsync(string roomId, string userId)
+    {
+        var roomDoc = await _firestoreDb.Collection("rooms").Document(roomId).GetSnapshotAsync();
+
+        if (!roomDoc.Exists)
+            return false;
+
+        // Aqui assumimos que você tem uma subcoleção "users" dentro de cada sala, onde cada documento tem o userId
+        var usersInRoom = await _firestoreDb.Collection("rooms")
+                                             .Document(roomId)
+                                             .Collection("users")
+                                             .WhereEqualTo("userId", userId)
+                                             .GetSnapshotAsync();
+
+        return usersInRoom.Documents.Any();  // Se encontrar algum documento, significa que o usuário está na sala
+    }
 }

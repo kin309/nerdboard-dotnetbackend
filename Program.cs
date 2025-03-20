@@ -4,6 +4,7 @@ using Google.Cloud.Firestore;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
         builder => builder
-            .WithOrigins("http://localhost:3001") // Allow frontend
+            .WithOrigins("http://localhost:3001", "http://localhost:5173") // Allow frontend
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -30,7 +31,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("yourSecretKey"))
+            ValidIssuer = "https://securetoken.google.com/nerdboard-956ae",
+            ValidAudience = "nerdboard-956ae",
         };
     });
 
@@ -46,11 +48,16 @@ builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<RoomService>();
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<IUserIdProvider, FirebaseUserIdProvider>();
 
 var app = builder.Build();
 
 app.UseRouting();
 app.UseCors("AllowAllOrigins");
+
+app.UseMiddleware<FirebaseAuthMiddleware>();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

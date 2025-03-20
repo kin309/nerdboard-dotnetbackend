@@ -46,8 +46,44 @@ public class RoomService
         List<FirestoreRoom> firestoreRooms = await _roomRepository.GetRoomsAsync();
 
         List<Room> rooms = new List<Room>();
-        foreach (var firestoreRoom in firestoreRooms){
-            Console.WriteLine(firestoreRoom.RoomName);
+        foreach (var firestoreRoom in firestoreRooms)
+        {
+            var room = Room.GetRoomFromFirestore(firestoreRoom);
+            rooms.Add(room);
+        }
+
+        return rooms;
+    }
+
+    public async Task<List<Room>> GetRoomsByUserIdAsync(string userId)
+    {
+        // Busca as associações de salas para o usuário no Firestore
+        var userRoomsQuery = await _roomRepository.GetRoomsAsync(); // Busca todas as salas
+
+        List<Room> rooms = new List<Room>();
+
+        foreach (var firestoreRoom in userRoomsQuery)
+        {
+            // Verifica se o usuário está na sala
+            var userInRoom = await _roomRepository.GetUserInRoomAsync(firestoreRoom.RoomId, userId);
+            if (userInRoom)
+            {
+                // Se o usuário está na sala, converte e adiciona à lista de salas
+                var room = Room.GetRoomFromFirestore(firestoreRoom);
+                rooms.Add(room);
+            }
+        }
+
+        return rooms;
+    }
+
+    public async Task<List<Room>> RemoveUserFromRooms(string userId)
+    {
+        // 🔹 Remove o usuário de todas as salas
+        var rooms = await GetRoomsByUserIdAsync(userId);
+        foreach (var room in rooms)
+        {
+            await RemoveUserFromRoomAsync(room.RoomId, userId);
         }
 
         return rooms;

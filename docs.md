@@ -33,10 +33,10 @@ connection.on("RoomCreated", (roomName) => {
 
 ---
 
-### 👤 Adicionar usuário a uma sala
+### 👤 Entrar em uma sala
 ```typescript
-connection.invoke("AddUserToRoom", "room123", { id: "456", username: "JaneDoe" })
-    .catch(err => console.error("Erro ao adicionar usuário:", err));
+connection.invoke("JoinRoom", "roomId")
+    .catch(err => console.error("Erro ao entrar na sala:", err));
 ```
 📤 **Retorno (Evento no Frontend)**:
 ```typescript
@@ -47,10 +47,10 @@ connection.on("UserAdded", (username) => {
 
 ---
 
-### ❌ Remover usuário de uma sala
+### ❌ Sair de uma sala
 ```typescript
-connection.invoke("RemoveUserFromRoom", "room123", "456")
-    .catch(err => console.error("Erro ao remover usuário:", err));
+connection.invoke("LeaveRoom", "roomId")
+    .catch(err => console.error("Erro ao sair da sala:", err));
 ```
 📤 **Retorno (Evento no Frontend)**:
 ```typescript
@@ -63,7 +63,7 @@ connection.on("UserRemoved", (userId) => {
 
 ### ✉️ Enviar mensagem para a sala
 ```typescript
-connection.invoke("SendMessageToRoom", "room123", "JohnDoe", "Olá, pessoal!")
+connection.invoke("SendMessageToRoom", "room123", "Olá, pessoal!")
     .catch(err => console.error("Erro ao enviar mensagem:", err));
 ```
 📤 **Retorno (Evento no Frontend)**:
@@ -140,5 +140,4 @@ connection.invoke("GetUsersInRoom", "room123")
      }
      startConnection();
      ```
-
 
