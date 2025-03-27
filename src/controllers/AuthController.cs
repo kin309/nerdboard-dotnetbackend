@@ -8,6 +8,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromHeader] string Authorization)
     {
+        Console.WriteLine("Login");
         var token = Authorization?.Replace("Bearer ", "");
 
         try
