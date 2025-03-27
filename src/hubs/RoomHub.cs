@@ -64,7 +64,6 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
             {
                 _logger.LogInformation("[DISCONNECT] User {UserId} disconnected normally", userId);
             }
-
             foreach (Room room in await _roomService.RemoveUserFromRooms(userId))
             {
                 _logger.LogDebug("[CLEANUP] Removing user {UserId} from room {RoomId}", userId, room.RoomId);
@@ -197,8 +196,8 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
         {
             _logger.LogDebug("[MESSAGE] User {UserId} sending message to room {RoomId}", userId, roomId);
             UserRecord userRecord = await _firebaseAuth.GetUserAsync(userId);
-            await _roomService.SendMessageToRoomAsync(roomId, userRecord.DisplayName, text);
             await Clients.Group(roomId).SendAsync("ReceiveMessage", userRecord.DisplayName, text);
+            await _roomService.SendMessageToRoomAsync(roomId, userRecord.DisplayName, text);
         }
         catch (Exception ex)
         {
