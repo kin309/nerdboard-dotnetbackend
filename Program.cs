@@ -127,5 +127,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<RoomHub>("/roomHub");
+app.MapHub<TicTacToeHub>("/tictactoeHub");
 
 app.Run();
