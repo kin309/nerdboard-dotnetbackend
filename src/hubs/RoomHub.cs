@@ -2,8 +2,6 @@ using System.Security.Claims;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using NanoidDotNet;
-using Microsoft.Extensions.Logging;
 
 [Authorize]
 public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
