@@ -64,10 +64,10 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
             {
                 _logger.LogInformation("[DISCONNECT] User {UserId} disconnected normally", userId);
             }
-            foreach (Room room in await _roomService.RemoveUserFromRooms(userId))
+            foreach (Room room in _roomService.RemoveUserFromRooms(userId))
             {
-                _logger.LogDebug("[CLEANUP] Removing user {UserId} from room {RoomId}", userId, room.RoomId);
-                await Clients.Group(room.RoomId).SendAsync("UserRemoved", userId);
+                _logger.LogDebug("[CLEANUP] Removing user {UserId} from room {RoomId}", userId, room.Id);
+                await NotifyUsersRoomsUpdated();
             }
 
             await base.OnDisconnectedAsync(exception);
@@ -79,16 +79,16 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
         }
     }
 
-    public async Task CreateRoom(string roomName, User user)
+    public async Task<string> CreateRoom(string roomName, User user)
     {
         try
         {
-            string roomId = Nanoid.Generate(size: 8);
-            _logger.LogInformation("[ROOM] Creating room {RoomName} with ID {RoomId} for user {UserId}", roomName, roomId, user.Id);
-            
-            await _roomService.CreateRoomAsync(roomName, roomId, user.Id, user.Username);
-            await Clients.Caller.SendAsync("RoomCreated", roomName);
-            await AddUserToRoom(roomId, user);
+            var room = _roomService.CreateRoom(roomName, user.Id, user.Username);
+            var roomId = room.Id;
+            _logger.LogInformation("[ROOM] Creating room {RoomName} with ID {RoomId} for user {UserId}", roomName, room.Id, user.Id);
+            await NotifyUsersRoomsUpdated();
+            // await AddUserToRoom(room.Id, user);
+            return roomId;
         }
         catch (Exception ex)
         {
@@ -101,7 +101,6 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
     {
         var userId = Context.UserIdentifier;
         var connectionId = Context.ConnectionId;
-
         try
         {
             if (string.IsNullOrEmpty(userId))
@@ -146,6 +145,7 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
             var username = userRecord.DisplayName ?? "Usuário Desconhecido";
 
             await RemoveUserFromRoom(roomId, userId);
+
             // await _roomService.RemoveUserFromRoomAsync(roomId, userId);
             _logger.LogInformation("[LEAVE] User {Username} ({UserId}) left room {RoomId}", username, userId, roomId);
         }
@@ -161,9 +161,9 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
         try
         {
             _logger.LogDebug("[ADD] Adding user {UserId} to room {RoomId}", user.Id, roomId);
-            await _roomService.AddUserToRoomAsync(roomId, user.Id, user.Username);
+            _roomService.AddUserToRoom(roomId, user.Id, user.Username);
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-            await Clients.Group(roomId).SendAsync("UserAdded", user.Username);
+            await NotifyUsersRoomsUpdated();
         }
         catch (Exception ex)
         {
@@ -177,9 +177,10 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
         try
         {
             _logger.LogDebug("[REMOVE] Removing user {UserId} from room {RoomId}", userId, roomId);
-            await _roomService.RemoveUserFromRoomAsync(roomId, userId);
+            _roomService.RemoveUserFromRoom(roomId, userId);
+
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
-            await Clients.Group(roomId).SendAsync("UserRemoved", userId);
+            await NotifyUsersRoomsUpdated();
         }
         catch (Exception ex)
         {
@@ -197,7 +198,7 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
             _logger.LogDebug("[MESSAGE] User {UserId} sending message to room {RoomId}", userId, roomId);
             UserRecord userRecord = await _firebaseAuth.GetUserAsync(userId);
             await Clients.Group(roomId).SendAsync("ReceiveMessage", userRecord.DisplayName, text);
-            await _roomService.SendMessageToRoomAsync(roomId, userRecord.DisplayName, text);
+            _roomService.SendMessageToRoom(roomId, userRecord.DisplayName, text);
         }
         catch (Exception ex)
         {
@@ -206,31 +207,19 @@ public class RoomHub(RoomService roomService, ILogger<RoomHub> logger) : Hub
         }
     }
 
-    public async Task<List<string?>> GetUsersInRoom(string roomId)
+    public List<Room> GetRooms()
     {
-        try
-        {
-            _logger.LogDebug("[USERS] Getting users in room {RoomId}", roomId);
-            return await _roomService.GetUsersInRoomAsync(roomId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[USERS] Error getting users in room {RoomId}", roomId);
-            throw;
-        }
+        return _roomService.GetRooms();
     }
 
-    public async Task<List<Room>> GetRooms()
+    public List<User> GetUsersInRoom(string roomId)
     {
-        try
-        {
-            _logger.LogDebug("[ROOMS] Getting all rooms");
-            return await _roomService.GetRoomsAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[ROOMS] Error getting rooms");
-            throw;
-        }
+        return _roomService.GetUsersInRoom(roomId);
+    }
+
+    private async Task NotifyUsersRoomsUpdated()
+    {
+        var rooms = _roomService.GetRooms();
+        await Clients.All.SendAsync("RoomsUpdated", rooms);
     }
 }
