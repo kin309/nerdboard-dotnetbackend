@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
+
 // Configure logging first
 builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(options => 
@@ -29,7 +30,7 @@ builder.Logging.AddFilter("System", LogLevel.Warning);
 builder.Logging.AddFilter("Microsoft.AspNetCore.SignalR", LogLevel.Warning);
 
 // Register all custom services and dependencies
-builder.Services.AddSingleton<IRoomRepository, RoomRepository>();
+builder.Services.AddSingleton<IRoomRepository, InMemoryRoomRepository>();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<RoomService>();
 builder.Services.AddSingleton<UserService>();

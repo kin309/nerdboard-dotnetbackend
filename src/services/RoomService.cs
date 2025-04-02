@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Identity;
+using NanoidDotNet;
+
 public class RoomService
 {
     private readonly IRoomRepository _roomRepository;
@@ -7,85 +10,89 @@ public class RoomService
         _roomRepository = roomRepository;
     }
 
-    public async Task CreateRoomAsync(string roomName, string roomId, string userId, string userName)
+    public Room CreateRoom(string roomName, string userId, string userName)
     {
-        var room = new FirestoreRoom
+        string roomId = Nanoid.Generate(size: 8);
+        var room = new Room
         {
-            RoomId = roomId,
-            RoomName = roomName,
+            Id = roomId,
+            Name = roomName,
             CreatedBy = userName
         };
-        await _roomRepository.CreateRoomAsync(room);
+        _roomRepository.CreateRoom(room);
+        return room;
     }
 
-    public async Task AddUserToRoomAsync(string roomId, string userId, string userName)
+    public void DeleteRoom(string roomId)
     {
-        var user = new FirestoreUser { Id = userId, Username = userName };
-        await _roomRepository.AddUserToRoomAsync(roomId, user);
+        _roomRepository.DeleteRoom(roomId);
     }
 
-    public async Task RemoveUserFromRoomAsync(string roomId, string userId)
+    public void AddUserToRoom(string roomId, string userId, string username)
     {
-        await _roomRepository.RemoveUserFromRoomAsync(roomId, userId);
+        var user = new User { Id = userId, Username = username };
+        _roomRepository.AddUserToRoom(roomId, user);
     }
 
-    public async Task SendMessageToRoomAsync(string roomId, string userName, string text)
+    public void RemoveUserFromRoom(string roomId, string userId)
     {
-        var message = new FirestoreMessage { SenderId = userName, Content = text };
-        await _roomRepository.AddMessageToRoomAsync(roomId, message);
-    }
-
-    public async Task<List<string?>> GetUsersInRoomAsync(string roomId)
-    {
-        var room = await _roomRepository.GetRoomAsync(roomId);
-        return room?.Users.Values.Select(u => u.Username).ToList() ?? new List<string?>();
-    }
-
-    public async Task<List<Room>> GetRoomsAsync()
-    {
-        List<FirestoreRoom> firestoreRooms = await _roomRepository.GetRoomsAsync();
-
-        List<Room> rooms = new List<Room>();
-        foreach (var firestoreRoom in firestoreRooms)
-        {
-            var room = Room.GetRoomFromFirestore(firestoreRoom);
-            rooms.Add(room);
+        _roomRepository.RemoveUserFromRoom(roomId, userId);
+        if (GetRoom(roomId)?.Users.Count == 0){
+            _roomRepository.DeleteRoom(roomId); // Remove the room if the user is the last one in it
         }
+    }
 
+    public void SendMessageToRoom(string roomId, string userName, string text)
+    {
+        var message = new Message { SenderId = userName, Content = text };
+        _roomRepository.AddMessageToRoom(roomId, message);
+    }
+
+    public List<User> GetUsersInRoom(string roomId)
+    {
+        var room = _roomRepository.GetRoom(roomId);
+        return room?.Users.Values.Select(u => u).ToList() ?? new List<User>();
+    }
+
+    public List<Room> GetRooms()
+    {
+        List<Room> rooms = _roomRepository.GetAllRooms();
         return rooms;
     }
 
-    public async Task<List<Room>> GetRoomsByUserIdAsync(string userId)
-    {
-        // Busca as associações de salas para o usuário no Firestore
-        var userRoomsQuery = await _roomRepository.GetRoomsAsync(); // Busca todas as salas
-
-        List<Room> rooms = new List<Room>();
-
-        foreach (var firestoreRoom in userRoomsQuery)
+    public List<Room> GetRoomsByUserIdAsync(string userId)
+    {  
+        List<Room> rooms = _roomRepository.GetAllRooms(); // Busca todas as salas
+        var roomsWithUser = new List<Room>(); // Lista para armazenar as salas que contêm o usuário
+        foreach (var room in rooms)
         {
-            // Verifica se o usuário está na sala
-            var userInRoom = await _roomRepository.GetUserInRoomAsync(firestoreRoom.RoomId, userId);
-            if (userInRoom)
+            foreach(var user in room.Users)
             {
-                // Se o usuário está na sala, converte e adiciona à lista de salas
-                var room = Room.GetRoomFromFirestore(firestoreRoom);
-                rooms.Add(room);
+                // Verifica se o usuário está na sala
+                if (user.Value.Id == userId)
+                {
+                    roomsWithUser.Add(room);
+                    break;
+                }
             }
         }
 
-        return rooms;
+        return roomsWithUser;
     }
 
-    public async Task<List<Room>> RemoveUserFromRooms(string userId)
+    public List<Room> RemoveUserFromRooms(string userId)
     {
         // 🔹 Remove o usuário de todas as salas
-        var rooms = await GetRoomsByUserIdAsync(userId);
+        var rooms = GetRoomsByUserIdAsync(userId);
         foreach (var room in rooms)
         {
-            await RemoveUserFromRoomAsync(room.RoomId, userId);
+            RemoveUserFromRoom(room.Id, userId);
         }
 
         return rooms;
+    }
+
+    public Room GetRoom(string roomId){
+        return _roomRepository.GetRoom(roomId);
     }
 }

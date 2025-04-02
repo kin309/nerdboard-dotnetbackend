@@ -1,10 +1,10 @@
 public interface IRoomRepository
 {
-    Task<FirestoreRoom?> GetRoomAsync(string roomId);
-    Task CreateRoomAsync(FirestoreRoom room);
-    Task AddUserToRoomAsync(string roomId, FirestoreUser user);
-    Task RemoveUserFromRoomAsync(string roomId, string userId);
-    Task AddMessageToRoomAsync(string roomId, FirestoreMessage message);
-    Task<List<FirestoreRoom>> GetRoomsAsync();
-    Task<bool> GetUserInRoomAsync(string roomId, string userId);  // Método adicional
+    Room? GetRoom(string roomId);
+    void CreateRoom(Room room);
+    void DeleteRoom(string roomId);
+    void AddUserToRoom(string roomId, User user);
+    void RemoveUserFromRoom(string roomId, string userId);
+    void AddMessageToRoom(string roomId, Message message);
+    List<Room> GetAllRooms();
 }

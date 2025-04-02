@@ -1,8 +1,8 @@
     public class Room
     {
-        public string? RoomId { get; set; }
+        public string? Id { get; set; }
 
-        public string? RoomName { get; set; }
+        public string? Name { get; set; }
 
         public string? CreatedBy { get; set; }
 
@@ -12,8 +12,8 @@
 
         public static Room GetRoomFromFirestore(FirestoreRoom firestoreRoom){
             Room room = new Room();
-            room.RoomId = firestoreRoom.RoomId;
-            room.RoomName = firestoreRoom.RoomName; 
+            room.Id = firestoreRoom.RoomId;
+            room.Name = firestoreRoom.RoomName; 
             room.CreatedBy = firestoreRoom.CreatedBy;
             foreach (var user in firestoreRoom.Users){
                 room.Users.Add(user.Key, User.GetFirestoreUser(user.Value));
